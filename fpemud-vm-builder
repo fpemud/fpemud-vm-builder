@@ -1,0 +1,39 @@
+#!/usr/bin/python2
+# -*- coding: utf-8; tab-width: 4; indent-tabs-mode: t -*-
+
+import sys
+import argparse
+sys.path.append('/usr/lib/fpemud-vm-builder')
+from fvm_param import FvmParam
+from main_impl import MainImpl
+
+def usage():
+	print "usage"
+	sys.exit(1)
+
+def die(msg=None):
+	if msg is not None:
+		print msg
+	sys.exit(1)
+
+def getArgParser():
+	parser = argparse.ArgumentParser()
+	parser.add_argument("--title", default="", help="Virtual machine title")
+	parser.add_argument("--description", default="", help="Virtual machine description")
+	parser.add_argument("--os", help="Virtual machine operating system")
+    parser.add_argument("directory", dest="vmdir", help="Virtual machine directory")
+	return parser
+
+###############################################################################
+
+parser = getArgParser()
+args = parser.parse_args()
+
+param = FvmParam()
+
+__impl = MainImpl(param, args)
+if __impl.main() == 0:
+	sys.exit(0)
+else:
+	usage()
+
