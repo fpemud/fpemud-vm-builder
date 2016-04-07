@@ -4,11 +4,7 @@
 
 class FvmPlugin:
 
-	def getUsage(self):
-		"""Get the plugin usage options"""
-		assert False
-
-	def getOsName(self):
+	def getOsNames(self):
 		assert False
 
 	def getVmCfgHw(self, param, createOptList):				# fixme: should return hardware spec

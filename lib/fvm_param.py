@@ -20,11 +20,7 @@ class FvmParam:
         self.pwd = os.getcwd()
 
         self.libDir = "/usr/lib/fpemud-vmake"
-        self.dataDir = "/opt/fpemud-vmake"
         self.tmpDir = ""
-
-        self.pluginDir = os.path.join(self.libDir, "plugins")
-        self.pluginDataDir = os.path.join(self.dataDir, "plugins")
 
         self.macOuiBr = "00:50:00"
         self.macOuiVm = "00:50:01"
