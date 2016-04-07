@@ -3,7 +3,7 @@
 
 import sys
 import argparse
-sys.path.append('/usr/lib/fpemud-vm-builder')
+sys.path.append('/usr/lib/fpemud-vmake')
 from fvm_param import FvmParam
 from main_impl import MainImpl
 
@@ -21,7 +21,8 @@ def getArgParser():
 	parser.add_argument("--title", default="", help="Virtual machine title")
 	parser.add_argument("--description", default="", help="Virtual machine description")
 	parser.add_argument("--os", help="Virtual machine operating system")
-    parser.add_argument("directory", dest="vmdir", help="Virtual machine directory")
+	parser.add_argument("--type", help="Virtual machine type")
+    parser.add_argument("path", default="", help="Virtual machine path")
 	return parser
 
 ###############################################################################
