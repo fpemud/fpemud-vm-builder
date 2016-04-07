@@ -19,18 +19,6 @@ class FvmPlugin:
 		   Should leave nothing in <param.tmpDir>."""
 		assert False
 
-	def doConfigure(self, param, vmInfo, optList):
-		"""Get the FvmWork object list for configuring the virtual machine."""
-		assert False
-
-	def mergeCfgOptList(self, param, vmCfgWin, optList):
-		"""Returns FvmVmConfigWin object. optList may be an empty list."""
-		assert False
-
-	def doExecute(self, param, vmInfo, optList):
-		"""Get the FvmWork object list for executing job on the virtual machine."""
-		assert False
-
 	def doPauseAutoShowWindow(self, param):
 		"""Get the FvmWork object list for pausing auto show window.
 		   The general method is to backup and delete all the auto start item, like startup directory and 'Run/RunOnce' registry item."""

@@ -48,14 +48,13 @@ class MainImpl:
 	def doCreate(self):
 		"""create new virtual machine and do an unattended os setup"""
 
-		self.args.vmdir = os.path.abspath(self.args.vmdir)
-
-		pObj = self.pluginManager.getPluginObjByType("os", self.args.plugin)
-		if pObj is None:
-			raise Exception("failed to load os-plugin %s."%(self.args.plugin))
-
+		self.args.vmdir = os.path.abspath(self.args.path)
 		if os.path.exists(self.args.vmdir):
 			raise Exception("target virtual machine directory already exists")
+
+		pObj = self.getPluginByOsName(self.pluginList, self.args.os)
+		if pObj is None:
+			raise Exception("the specified operating system is not supported")
 
 		try:
 			# create virt-machine
@@ -68,7 +67,7 @@ class MainImpl:
 			vmCfgHw.checkValid()
 			self._printVmInfo(self.infoPrinter, vmCfgBasic, vmCfgHw)
 
-			vb = FvmVmBuilder(self.param)
+			vb = FvmVmFqemuBuilder(self.param)
 			vb.createVm(self.args.vmdir, vmCfgBasic, vmCfgHw)
 
 			self.infoPrinter.decIndent()
