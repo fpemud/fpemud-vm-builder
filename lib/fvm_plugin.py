@@ -1,13 +1,12 @@
 #!/usr/bin/python2
 # -*- coding: utf-8; tab-width: 4; indent-tabs-mode: t -*-
 
+
 class FvmPlugin:
 
 	def getUsage(self):
 		"""Get the plugin usage options"""
 		assert False
-
-class FvmPluginOs(FvmPlugin):
 
 	def getOsName(self):
 		assert False
