@@ -8,33 +8,41 @@ from fvm_param import FvmParam
 from main_impl import MainImpl
 
 def usage():
-	print "usage"
-	sys.exit(1)
+    print "usage"
+    sys.exit(1)
 
 def die(msg=None):
-	if msg is not None:
-		print msg
-	sys.exit(1)
+    if msg is not None:
+        print msg
+    sys.exit(1)
 
 def getArgParser():
-	parser = argparse.ArgumentParser()
-	parser.add_argument("--title", default="", help="Virtual machine title")
-	parser.add_argument("--description", default="", help="Virtual machine description")
-	parser.add_argument("--os", help="Virtual machine operating system")
-	parser.add_argument("--type", help="Virtual machine type")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--title", default="", help="Virtual machine title")
+    parser.add_argument("--description", default="", help="Virtual machine description")
+    parser.add_argument("--os", help="Virtual machine operating system")
+    parser.add_argument("--type", help="Virtual machine type")
     parser.add_argument("path", default="", help="Virtual machine path")
-	return parser
+    return parser
 
 ###############################################################################
 
 parser = getArgParser()
 args = parser.parse_args()
 
+if args.path == "":
+    if args.os == "?":
+
+
+
+
+
+
 param = FvmParam()
 
 __impl = MainImpl(param, args)
 if __impl.main() == 0:
-	sys.exit(0)
+    sys.exit(0)
 else:
-	usage()
+    usage()
 

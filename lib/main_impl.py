@@ -9,7 +9,6 @@ from fvm_util import CfgOptUtil
 from fvm_param import FvmConfigBasic
 from fvm_param import FvmConfigWin
 from fvm_plugin import FvmPluginOs
-from fvm_plugin import FvmPluginApp
 from fvm_plugin import FvmWorkFullControl
 from fvm_plugin import FvmWorkOffLineInitDesktopBackup
 from fvm_plugin import FvmWorkOffLineOperateDesktopBackup
@@ -50,8 +49,6 @@ class MainImpl:
 
 			if isinstance(pObj, FvmPluginOs):
 				self.doOsConfigure(pObj)
-			elif isinstance(pObj, FvmPluginApp):
-				self.doAppConfigure(pObj)
 			else:
 				assert False
 
@@ -329,7 +326,7 @@ class MainImpl:
 			raise Exception("target virtual machine directory does not exist")
 
 		# open vmObj and run configuration operation
-		self.infoPrinter.printInfo("Doing %s-execute operation..."%(self._getPluginType(pObj)))
+		self.infoPrinter.printInfo("Doing execute operation...")
 		self.infoPrinter.incIndent()
 
 		vmObj = FvmVmObject(self.param, self.args.vmdir)
@@ -504,14 +501,6 @@ class MainImpl:
 		infoPrinter.printInfo("     mainDiskInterface: %s"%(vmCfgHw.mainDiskInterface))
 		infoPrinter.printInfo("     networkAdapterInterface: %s"%(vmCfgHw.networkAdapterInterface))
 		infoPrinter.printInfo("")
-
-	def _getPluginType(self, pObj):
-		if isinstance(pObj, FvmPluginOs):
-			return "os"
-		elif isinstance(pObj, FvmPluginApp):
-			return "app"
-		else:
-			assert False
 
 	def _getAppCfgWorkList(self, vmObj, pluginObj, pluginName, optList):
 		workList = []

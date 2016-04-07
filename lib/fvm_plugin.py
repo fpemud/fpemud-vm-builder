@@ -46,35 +46,6 @@ class FvmPluginOs(FvmPlugin):
 		   The general method is to resume all the auto start item, like startup directory and 'Run/RunOnce' registry item."""
 		assert False
 
-class FvmPluginApp(FvmPlugin):
-
-	def getAppName(self):
-		assert False
-
-	def doInstall(self, param, vmInfo, optList):
-		"""Get the FvmWork object list for installing the application."""
-		assert False
-
-	def getDesktopItemBackup(self, param, vmInfo, installOptList):
-		"""Get the WinDesktopItemBackup object, return None if the plugin has no desktop item"""
-		assert False
-
-	def doUninstall(self, param, vmInfo):
-		"""Get the FvmWork object for un-installing the application."""
-		assert False
-
-	def doConfigure(self, param, vmInfo, optList):
-		"""Get the FvmWork object list for configuring the application."""
-		assert False
-
-	def mergeCfgOptList(self, param, vmCfgWin, optList):
-		"""Returns FvmVmConfigWin object. optList may be an empty list."""
-		assert False
-
-	def doExecute(self, param, vmInfo, optList):
-		"""Get the FvmWork object list for executing job with the application."""
-		assert False
-
 class FvmWork:
 
 	"""What does this work do"""
