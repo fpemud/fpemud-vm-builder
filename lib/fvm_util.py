@@ -11,7 +11,7 @@ import time
 import struct
 import socket
 import hivex
-import ConfigParser
+import configparser
 
 class FvmUtil:
 
@@ -718,17 +718,17 @@ class WinRegistry:
 			except:
 				return None
 
-			print "debug: getValue " + str(val)
+			print("debug: getValue " + str(val))
 
 			val = h.value_value(val)
 
-			print "debug2: getValue " + str(val)
+			print("debug2: getValue " + str(val))
 
 			vType, value = self._regValToValue(val)
 			if valueType is not None:
 				assert valueType == vType
 
-			print "debug3: getValue " + valueType + " " + value
+			print("debug3: getValue " + valueType + " " + value)
 
 			return value
 		finally:
@@ -758,7 +758,7 @@ class WinRegistry:
 			node = self._getNode(h, key)
 			assert node is not None
 
-			cfg = ConfigParser.SafeConfigParser()
+			cfg = configparser.SafeConfigParser()
 			c = 0
 			for i in h.node_values(node):
 				if valueName is not None and h.value_key(i) != valueName:
@@ -778,7 +778,7 @@ class WinRegistry:
 			del h
 
 	def importFile(self, filename):
-		cfg = ConfigParser.SafeConfigParser()
+		cfg = configparser.SafeConfigParser()
 		cfg.read(filename)
 		for secName in cfg.sections():
 			key = cfg.get(secName, "key")
@@ -947,7 +947,7 @@ class WinDesktopItemBackup:
 			self.itemInfoDict[itemName] = [itemInfo]
 
 	def getItemNameList(self):
-		return self.itemInfoDict.keys()
+		return list(self.itemInfoDict.keys())
 
 	def initBackup(self, param, mainDiskDir):
 		self.param = param
@@ -1056,7 +1056,7 @@ class InfoPrinter:
 		line += self.GOOD + "*" + self.NORMAL + " "
 		line += "\t" * self.indent
 		line += s
-		print line
+		print(line)
 
 class PopenStdio:
 	def __init__(self, proc, logFile=None):
@@ -1175,7 +1175,7 @@ class CfgOptUtil:
 				if retList[i].startswith(prefix):
 					sKv = CfgOptUtil._valuePairListToDict(retList[i][len(prefix):].split(";"))
 					nKv = CfgOptUtil._valuePairListToDict(ni[len(prefix):].split(";"))
-					rKv = dict(sKv.items() + nKv.items())
+					rKv = dict(list(sKv.items()) + list(nKv.items()))
 					retList[i] = "%s%s"%(prefix, ";".join(CfgOptUtil._dictToValuePairList(rKv)))
 					found = True
 			if not found:
@@ -1207,7 +1207,7 @@ class CfgOptUtil:
 	@staticmethod
 	def _dictToValuePairList(theDict):
 		ret = []
-		for k, v in theDict.items():
+		for k, v in list(theDict.items()):
 			assert ":" not in k and ":" not in v
 			ret.append("%s:%s"%(k, v))
 		return ret

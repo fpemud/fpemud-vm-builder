@@ -3,7 +3,7 @@
 
 import os
 import collections
-import ConfigParser
+import configparser
 
 class FvmParam:
     """Virt-machine directory structure:
@@ -57,7 +57,7 @@ class FvmConfigBasic:
         if not os.path.exists(fileName):
             raise Exception("config file \"%s\" does not exist"%(fileName))
 
-        cfg = ConfigParser.SafeConfigParser()
+        cfg = configparser.SafeConfigParser()
         cfg.optionxform = str                                # make option names case-sensitive
         cfg.read(fileName) 
 
@@ -67,7 +67,7 @@ class FvmConfigBasic:
     def writeToDisk(self, fileName):
         """write object to disk"""
 
-        cfg = ConfigParser.SafeConfigParser()
+        cfg = configparser.SafeConfigParser()
         cfg.optionxform = str                                # make option names case-sensitive
 
         cfg.add_section("Element Entry")
@@ -220,7 +220,7 @@ class FvmConfigHardware:
         if not os.path.exists(fileName):
             raise Exception("config file \"%s\" does not exist"%(fileName))
 
-        cfg = ConfigParser.SafeConfigParser()
+        cfg = configparser.SafeConfigParser()
         cfg.read(fileName) 
 
         self.qemuVmType = cfg.get("hardware", "qemuVmType")
@@ -250,7 +250,7 @@ class FvmConfigHardware:
     def writeToDisk(self, fileName):
         """write object to disk"""
 
-        cfg = ConfigParser.SafeConfigParser()
+        cfg = configparser.SafeConfigParser()
 
         cfg.add_section("hardware")
         cfg.set("hardware", "qemuVmType", self.qemuVmType)
@@ -307,7 +307,7 @@ class FvmConfigWin:
         self.appDict.clear()
 
         # do operation
-        cfg = ConfigParser.SafeConfigParser()
+        cfg = configparser.SafeConfigParser()
         cfg.read(fileName) 
 
         self.os.pluginName = cfg.get("os", "pluginname")
@@ -344,7 +344,7 @@ class FvmConfigWin:
             self.os.cfgOptList = []
 
         # save config file
-        cfg = ConfigParser.SafeConfigParser()
+        cfg = configparser.SafeConfigParser()
 
         cfg.add_section("os")
         cfg.set("os", "pluginName", self.os.pluginName)
