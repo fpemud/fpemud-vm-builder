@@ -1,8 +1,8 @@
 #!/bin/bash
 
-FILES="./fpemud-vmaker"
+FILES="./fpemud-vmake"
 LIBFILES="$(find ./lib -name '*.py' | tr '\n' ' ')"
-LIBFILES="${LIBFILES} $(find ./plugins -name '*.py' | tr '\n' ' ')"
+LIBFILES="${LIBFILES} $(find ./plugin-* -name '*.py' | tr '\n' ' ')"
 ERRFLAG=0
 
 OUTPUT=`pyflakes ${FILES} ${LIBFILES} 2>&1`

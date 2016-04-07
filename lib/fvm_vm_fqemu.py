@@ -2,13 +2,13 @@
 # -*- coding: utf-8; tab-width: 4; indent-tabs-mode: t -*-
 
 import os
-import socket
 import time
 import subprocess
 import copy
 import dbus
 import shutil
-from xml.dom import minidom
+import configparser
+import collections
 from fvm_util import FvmUtil
 
 """
@@ -19,7 +19,8 @@ Virt-machine directory structure:
     |--fqemu.win                              config file
     |--disk-main.img                          system disk image
 """
-    
+
+
 class FvmVmFqemuBuilder:
 
     def __init__(self, param):
@@ -38,7 +39,7 @@ class FvmVmFqemuBuilder:
 
             vmCfgHw.writeToDisk(os.path.join(vmDir, "fqemu.hw"))
 
-            vmCfgWin = FvmConfigWin()
+            vmCfgWin = FvmVmFqemuConfigWin()
             vmCfgWin.writeToDisk(os.path.join(vmDir, "fqemu.win"))
 
             FvmUtil.touchFile(os.path.join(vmDir, "setup.mode"))
@@ -55,6 +56,7 @@ class FvmVmFqemuInfo:
         self.vmCfgHw = vmCfgHw
         self.vmCfgWin = vmCfgWin
 
+
 class FvmVmFqemuObject:
 
     def __init__(self, param, vmDir):
@@ -63,11 +65,11 @@ class FvmVmFqemuObject:
         self.param = param
 
         self.vmDir = vmDir
-        self.vmCfgBasic = FvmConfigBasic()
+        self.vmCfgBasic = FvmVmFqemuConfigBasic()
         self.vmCfgBasic.readFromDisk(os.path.join(self.vmDir, "element.ini"))
-        self.vmCfgHw = FvmConfigHardware()
+        self.vmCfgHw = FvmVmFqemuConfigHardware()
         self.vmCfgHw.readFromDisk(os.path.join(self.vmDir, "fqemu.hw"))
-        self.vmCfgWin = FvmConfigWin()
+        self.vmCfgWin = FvmVmFqemuConfigWin()
         self.vmCfgWin.readFromDisk(os.path.join(self.vmDir, "fqemu.win"))
 
         self.localFakeHarddisk = ""            # the second harddisk. the value is ifType, can be ""|"ide"|"virtio-scsi"|"virtio-blk"
@@ -84,7 +86,7 @@ class FvmVmFqemuObject:
         self.showUi = False
 
     def getVmInfo(self):
-        ret = FvmVmInfo(self.vmCfgBasic, self.vmCfgHw, self.vmCfgWin)
+        ret = FvmVmFqemuInfo(self.vmCfgBasic, self.vmCfgHw, self.vmCfgWin)
         return copy.deepcopy(ret)
 
     def setVmCfgWin(self, vmCfgWin):
@@ -175,13 +177,13 @@ class FvmVmFqemuObject:
                 FvmUtil.createFile("fake-hdd.img", 100)
 
             # run virtual machine
-            vmProc = subprocess.Popen(qemuCmd, shell = True)
+            vmProc = subprocess.Popen(qemuCmd, shell=True)
 
             # open spice client, will be auto-closed when virtual machines stops
             if self.showUi:
                 while not FvmUtil.isSocketPortBusy("tcp", self.spicePort):
                     time.sleep(0.2)
-                FvmUtil.shell("/usr/bin/spicy -h localhost -p %d >/dev/null 2>&1 &"%(self.spicePort))
+                FvmUtil.shell("/usr/bin/spicy -h localhost -p %d >/dev/null 2>&1 &" % (self.spicePort))
 
             # wait the virtual machine to stop
             vmProc.wait()
@@ -243,93 +245,93 @@ class FvmVmFqemuObject:
                     bi = bi + 1
 
         cmd = "/usr/bin/qemu-system-x86_64"
-        cmd += " -name \"%s\""%(self.vmCfgBasic.title)
+        cmd += " -name \"%s\"" % (self.vmCfgBasic.title)
         cmd += " -enable-kvm -no-user-config -nodefaults"
-        cmd += " -M %s"%(self.vmCfgHw.qemuVmType)
+        cmd += " -M %s" % (self.vmCfgHw.qemuVmType)
 
         # platform device
         cmd += " -cpu host"
-        cmd += " -smp 1,sockets=1,cores=%d,threads=1"%(self.vmCfgHw.cpuNumber)
-        cmd += " -m %d"%(self.vmCfgHw.memorySize)
+        cmd += " -smp 1,sockets=1,cores=%d,threads=1" % (self.vmCfgHw.cpuNumber)
+        cmd += " -m %d" % (self.vmCfgHw.memorySize)
         cmd += " -rtc base=localtime"
 
         # main-disk
         if True:
             if self.vmCfgHw.mainDiskFormat == "raw-sparse":
-                cmd += " -drive \'file=%s,if=none,id=main-disk,format=%s\'"%(os.path.join(self.vmDir, "disk-main.img"), "raw")
+                cmd += " -drive \'file=%s,if=none,id=main-disk,format=%s\'" % (os.path.join(self.vmDir, "disk-main.img"), "raw")
             else:
-                cmd += " -drive \'file=%s,if=none,id=main-disk,format=%s\'"%(os.path.join(self.vmDir, "disk-main.img"), "qcow2")
+                cmd += " -drive \'file=%s,if=none,id=main-disk,format=%s\'" % (os.path.join(self.vmDir, "disk-main.img"), "qcow2")
             if self.vmCfgHw.mainDiskInterface == "virtio-blk" and not forSetup:
-                cmd += " -device virtio-blk-pci,scsi=off,bus=%s,addr=0x03,drive=main-disk,id=main-disk,%s"%(pciBus, self._bootIndexStr(mainDiskBootIndex))
+                cmd += " -device virtio-blk-pci,scsi=off,bus=%s,addr=0x03,drive=main-disk,id=main-disk,%s" % (pciBus, self._bootIndexStr(mainDiskBootIndex))
             elif self.vmCfgHw.mainDiskInterface == "virtio-scsi" and not forSetup:
-                cmd += " -device virtio-blk-pci,scsi=off,bus=%s,addr=0x03,drive=main-disk,id=main-disk,%s"%(pciBus, self._bootIndexStr(mainDiskBootIndex))        # fixme
+                cmd += " -device virtio-blk-pci,scsi=off,bus=%s,addr=0x03,drive=main-disk,id=main-disk,%s" % (pciBus, self._bootIndexStr(mainDiskBootIndex))        # fixme
             else:
-                cmd += " -device ide-hd,bus=ide.0,unit=0,drive=main-disk,id=main-disk,%s"%(self._bootIndexStr(mainDiskBootIndex))
+                cmd += " -device ide-hd,bus=ide.0,unit=0,drive=main-disk,id=main-disk,%s" % (self._bootIndexStr(mainDiskBootIndex))
 
         # extra disk
         if self.localFakeHarddisk != "":
-            cmd += " -drive \'file=%s,if=none,id=fake-harddisk,readonly=on,format=raw\'"%(os.path.join(self.vmDir, "fake-hdd.img"))
+            cmd += " -drive \'file=%s,if=none,id=fake-harddisk,readonly=on,format=raw\'" % (os.path.join(self.vmDir, "fake-hdd.img"))
             if self.localFakeHarddisk == "virtio-blk":
-                cmd += " -device virtio-blk-pci,scsi=off,bus=%s,addr=0x10,drive=fake-harddisk,id=fake-harddisk"%(pciBus)
+                cmd += " -device virtio-blk-pci,scsi=off,bus=%s,addr=0x10,drive=fake-harddisk,id=fake-harddisk" % (pciBus)
             elif self.localFakeHarddisk == "virtio-scsi":
-                cmd += " -device virtio-blk-pci,scsi=off,bus=%s,addr=0x10,drive=fake-harddisk,id=fake-harddisk"%(pciBus)            # fixme
+                cmd += " -device virtio-blk-pci,scsi=off,bus=%s,addr=0x10,drive=fake-harddisk,id=fake-harddisk" % (pciBus)            # fixme
             else:
                 cmd += " -device ide-hd,bus=ide.0,unit=0,drive=fake-harddisk,id=fake-harddisk"
 
         # extra disk
         if self.localFloppyImgFile != "":
-            cmd += " -drive \'file=%s,if=none,id=extra-floopy,format=raw\'"%(self.localFloppyImgFile)
+            cmd += " -drive \'file=%s,if=none,id=extra-floopy,format=raw\'" % (self.localFloppyImgFile)
             cmd += " -global isa-fdc.driveA=extra-floopy"
 
         # extra disk
         if self.localUsbImgFile != "":
-            cmd += " -drive \'file=%s,if=none,id=extra-usb-disk,format=raw\'"%(self.localUsbImgFile)
+            cmd += " -drive \'file=%s,if=none,id=extra-usb-disk,format=raw\'" % (self.localUsbImgFile)
             cmd += " -device usb-storage,drive=extra-usb-disk,id=extra-usb-disk"
 
         # extra disk
         if self.localCdromImgFile != "":
-            cmd += " -drive \'file=%s,if=none,id=extra-cdrom,readonly=on,format=raw\'"%(self.localCdromImgFile)
-            cmd += " -device ide-cd,bus=ide.1,unit=0,drive=extra-cdrom,id=extra-cdrom,%s"%(self._bootIndexStr(cdromBootIndex))
+            cmd += " -drive \'file=%s,if=none,id=extra-cdrom,readonly=on,format=raw\'" % (self.localCdromImgFile)
+            cmd += " -device ide-cd,bus=ide.1,unit=0,drive=extra-cdrom,id=extra-cdrom,%s" % (self._bootIndexStr(cdromBootIndex))
 
         # graphics device
         if self.vmCfgHw.graphicsAdapterInterface == "qxl" and not forSetup:
-            cmd += " -spice port=%d,addr=127.0.0.1,disable-ticketing,agent-mouse=off"%(self.spicePort)
+            cmd += " -spice port=%d,addr=127.0.0.1,disable-ticketing,agent-mouse=off" % (self.spicePort)
             cmd += " -vga qxl -global qxl-vga.ram_size_mb=64 -global qxl-vga.vram_size_mb=64"
 #            cmd += " -device qxl-vga,bus=%s,addr=0x04,ram_size_mb=64,vram_size_mb=64"%(pciBus)                        # see https://bugzilla.redhat.com/show_bug.cgi?id=915352
         else:
-            cmd += " -spice port=%d,addr=127.0.0.1,disable-ticketing,agent-mouse=off"%(self.spicePort)
-            cmd += " -device VGA,bus=%s,addr=0x04"%(pciBus)
+            cmd += " -spice port=%d,addr=127.0.0.1,disable-ticketing,agent-mouse=off" % (self.spicePort)
+            cmd += " -device VGA,bus=%s,addr=0x04" % (pciBus)
 
         # sound device
         if self.vmCfgHw.soundAdapterInterface == "ac97" and not forSetup:
-            cmd += " -device AC97,id=sound0,bus=%s,addr=0x%x"%(pciBus, self.vmCfgHw.soundAdapterPciSlot)
+            cmd += " -device AC97,id=sound0,bus=%s,addr=0x%x" % (pciBus, self.vmCfgHw.soundAdapterPciSlot)
 
         # network device
         if not forSetup and self.networkStatus != "none":
             if self.networkStatus == "virtio-dummy":
                 assert self.vmCfgHw.networkAdapterInterface == "virtio"
-                cmd += " -netdev tap,id=eth0,ifname=%s,script=no,downscript=no"%(self._getVirtioDummyTapInterface())
-                cmd += " -device virtio-net-pci,netdev=eth0,mac=%s,bus=%s,addr=0x%x,romfile="%(self._getVirtioDummyTapVmMacAddress(), pciBus, self.vmCfgHw.networkAdapterPciSlot)
+                cmd += " -netdev tap,id=eth0,ifname=%s,script=no,downscript=no" % (self._getVirtioDummyTapInterface())
+                cmd += " -device virtio-net-pci,netdev=eth0,mac=%s,bus=%s,addr=0x%x,romfile=" % (self._getVirtioDummyTapVmMacAddress(), pciBus, self.vmCfgHw.networkAdapterPciSlot)
             elif self.vmCfgHw.networkAdapterInterface != "":
                 if self.networkStatus == "isolate":
                     restrictStr = "yes"
                 else:
                     restrictStr = "no"
-                cmd += " -netdev user,id=eth0,restrict=%s"%(restrictStr)
-                cmd += " -device rtl8139,netdev=eth0,id=eth0,bus=%s,addr=0x%x,romfile="%(pciBus, self.vmCfgHw.networkAdapterPciSlot)
+                cmd += " -netdev user,id=eth0,restrict=%s" % (restrictStr)
+                cmd += " -device rtl8139,netdev=eth0,id=eth0,bus=%s,addr=0x%x,romfile=" % (pciBus, self.vmCfgHw.networkAdapterPciSlot)
 
         # balloon device
         if self.vmCfgHw.balloonDeviceSupport and not forSetup:
-            cmd += " -device virtio-balloon-pci,id=balloon0,bus=%s,addr=0x%x"%(pciBus, self.vmCfgHw.balloonDevicePciSlot)
+            cmd += " -device virtio-balloon-pci,id=balloon0,bus=%s,addr=0x%x" % (pciBus, self.vmCfgHw.balloonDevicePciSlot)
 
         # vdi-port
         if self.vmCfgHw.vdiPortDeviceSupport and not forSetup:
-            cmd += " -device virtio-serial-pci,id=vdi-port,bus=%s,addr=0x%x"%(pciBus, self.vmCfgHw.vdiPortDevicePciSlot)
+            cmd += " -device virtio-serial-pci,id=vdi-port,bus=%s,addr=0x%x" % (pciBus, self.vmCfgHw.vdiPortDevicePciSlot)
 
             # usb redirection
-            for i in range(0,self.vmCfgHw.shareUsbNumber):
-                cmd += " -chardev spicevmc,name=usbredir,id=usbredir%d"%(i)
-                cmd += " -device usb-redir,chardev=usbredir%d,id=usbredir%d"%(i,i)
+            for i in range(0, self.vmCfgHw.shareUsbNumber):
+                cmd += " -chardev spicevmc,name=usbredir,id=usbredir%d" % (i)
+                cmd += " -device usb-redir,chardev=usbredir%d,id=usbredir%d" % (i, i)
 
             # vdagent
             cmd += " -chardev spicevmc,id=vdagent,debug=0,name=vdagent"
@@ -355,7 +357,7 @@ class FvmVmFqemuObject:
         # create network and add vm
         dbusObj = dbus.SystemBus().get_object('org.fpemud.VirtService', '/org/fpemud/VirtService')
         self.tapNetId = dbusObj.NewNetwork("isolate", dbus_interface='org.fpemud.VirtService')
-        netObj = dbus.SystemBus().get_object('org.fpemud.VirtService', '/org/fpemud/VirtService/%d/Networks/%d'%(self.param.uid, self.tapNetId))
+        netObj = dbus.SystemBus().get_object('org.fpemud.VirtService', '/org/fpemud/VirtService/%d/Networks/%d' % (self.param.uid, self.tapNetId))
         self.tapVmId = netObj.AddVm(self.vmDir, dbus_interface='org.fpemud.VirtService.Network')
 
     def _freeVirtioDummyNetwork(self):
@@ -363,7 +365,7 @@ class FvmVmFqemuObject:
 
         # delete vm and network
         dbusObj = dbus.SystemBus().get_object('org.fpemud.VirtService', '/org/fpemud/VirtService')
-        netObj = dbus.SystemBus().get_object('org.fpemud.VirtService', '/org/fpemud/VirtService/%d/Networks/%d'%(self.param.uid, self.tapNetId))
+        netObj = dbus.SystemBus().get_object('org.fpemud.VirtService', '/org/fpemud/VirtService/%d/Networks/%d' % (self.param.uid, self.tapNetId))
         netObj.DeleteVm(self.tapVmId, dbus_interface='org.fpemud.VirtService.Network')
         dbusObj.DeleteNetwork(self.tapNetId, dbus_interface='org.fpemud.VirtService')
 
@@ -374,20 +376,20 @@ class FvmVmFqemuObject:
     def _getVirtioDummyTapInterface(self):
         assert self.tapNetId != -1 and self.tapVmId != -1
 
-        vmObj = dbus.SystemBus().get_object('org.fpemud.VirtService', '/org/fpemud/VirtService/%d/Networks/%d/NetVirtMachines/%d'%(self.param.uid, self.tapNetId, self.tapVmId))
+        vmObj = dbus.SystemBus().get_object('org.fpemud.VirtService', '/org/fpemud/VirtService/%d/Networks/%d/NetVirtMachines/%d' % (self.param.uid, self.tapNetId, self.tapVmId))
         return vmObj.GetTapInterface(dbus_interface='org.fpemud.VirtService.NetVirtMachine')
 
     def _getVirtioDummyTapVmMacAddress(self):
         assert self.tapNetId != -1 and self.tapVmId != -1
 
-        vmObj = dbus.SystemBus().get_object('org.fpemud.VirtService', '/org/fpemud/VirtService/%d/Networks/%dNetVirtMachines/%d'%(self.param.uid, self.tapNetId, self.tapVmId))
+        vmObj = dbus.SystemBus().get_object('org.fpemud.VirtService', '/org/fpemud/VirtService/%d/Networks/%dNetVirtMachines/%d' % (self.param.uid, self.tapNetId, self.tapVmId))
         return vmObj.GetTapVmMacAddress(dbus_interface='org.fpemud.VirtService.NetVirtMachine')
 
     def _bootIndexStr(self, bootIndex):
         if bootIndex == -1:
             return ""
         else:
-            return "bootindex=%d"%(bootIndex)
+            return "bootindex=%d" % (bootIndex)
 
 
 class FvmVmFqemuConfigBasic:
@@ -413,11 +415,11 @@ class FvmVmFqemuConfigBasic:
 
         # fixme: cfg.read(fileName) won't raise exception when file not exist, strange
         if not os.path.exists(fileName):
-            raise Exception("config file \"%s\" does not exist"%(fileName))
+            raise Exception("config file \"%s\" does not exist" % (fileName))
 
         cfg = configparser.SafeConfigParser()
         cfg.optionxform = str                                # make option names case-sensitive
-        cfg.read(fileName) 
+        cfg.read(fileName)
 
         self.name = cfg.get("Element Entry", "Name")
         self.description = cfg.get("Element Entry", "Comment")
@@ -434,6 +436,7 @@ class FvmVmFqemuConfigBasic:
         cfg.set("Element Entry", "Type", "virtual-machine")
 
         cfg.write(open(fileName, "w"))
+
 
 class FvmVmFqemuConfigHardware:
 
@@ -464,13 +467,13 @@ class FvmVmFqemuConfigHardware:
     def checkValid(self):
         """if FvmConfigHardware object is invalid, raise exception"""
 
-        validQemuVmType = [ "pc", "q35" ]
-        validArch = [ "x86", "amd64" ]
-        validDiskInterface = [ "virtio-blk", "ide" ]
-        validDiskFormat = [ "raw-sparse", "qcow2" ]
-        validGraphicsAdapterInterface = [ "qxl", "vga" ]
-        validSoundAdapterInterface = [ "ac97", "" ]
-        validNetworkAdapterInterface = [ "virtio", "user", "" ]
+        validQemuVmType = ["pc", "q35"]
+        validArch = ["x86", "amd64"]
+        validDiskInterface = ["virtio-blk", "ide"]
+        validDiskFormat = ["raw-sparse", "qcow2"]
+        validGraphicsAdapterInterface = ["qxl", "vga"]
+        validSoundAdapterInterface = ["ac97", ""]
+        validNetworkAdapterInterface = ["virtio", "user", ""]
 
         if self.qemuVmType is None or not isinstance(self.qemuVmType, str):
             raise Exception("qemuVmType is invalid")
@@ -576,10 +579,10 @@ class FvmVmFqemuConfigHardware:
 
         # fixme: cfg.read(fileName) won't raise exception when file not exist, strange
         if not os.path.exists(fileName):
-            raise Exception("config file \"%s\" does not exist"%(fileName))
+            raise Exception("config file \"%s\" does not exist" % (fileName))
 
         cfg = configparser.SafeConfigParser()
-        cfg.read(fileName) 
+        cfg.read(fileName)
 
         self.qemuVmType = cfg.get("hardware", "qemuVmType")
         self.cpuArch = cfg.get("hardware", "cpuArch")
@@ -637,6 +640,7 @@ class FvmVmFqemuConfigHardware:
 
         cfg.write(open(fileName, "w"))
 
+
 class FvmVmFqemuConfigWin:
 
     class OsPluginInfo:
@@ -656,7 +660,7 @@ class FvmVmFqemuConfigWin:
 
         # fixme: cfg.read(fileName) won't raise exception when file not exist, strange
         if not os.path.exists(fileName):
-            raise Exception("config file \"%s\" does not exist"%(fileName))
+            raise Exception("config file \"%s\" does not exist" % (fileName))
 
         # clear self
         self.os.pluginName = None
@@ -666,7 +670,7 @@ class FvmVmFqemuConfigWin:
 
         # do operation
         cfg = configparser.SafeConfigParser()
-        cfg.read(fileName) 
+        cfg.read(fileName)
 
         self.os.pluginName = cfg.get("os", "pluginname")
         self.os.setupOptList = []
@@ -681,7 +685,7 @@ class FvmVmFqemuConfigWin:
         for secName in cfg.sections():
             if secName.startswith("app"):
                 appPluginName = cfg.get(secName, "pluginname")
-                app = FvmConfigWin.AppPluginInfo()
+                app = FvmVmFqemuConfigWin.AppPluginInfo()
                 app.installOptList = []
                 for (name, value) in cfg.items(secName):
                     if name.startswith("installopt"):
@@ -708,26 +712,26 @@ class FvmVmFqemuConfigWin:
         cfg.set("os", "pluginName", self.os.pluginName)
         i = 0
         for co in self.os.setupOptList:
-            cfg.set("os", "setupOpt%d"%(i), co)
+            cfg.set("os", "setupOpt%d" % (i), co)
             i = i + 1
         i = 0
         for co in self.os.cfgOptList:
-            cfg.set("os", "cfgOpt%d"%(i), co)
+            cfg.set("os", "cfgOpt%d" % (i), co)
             i = i + 1
 
         i = 0
         for appPluginName in self.appDict:
             app = self.appDict[appPluginName]
-            secName = "app%d"%(i)
+            secName = "app%d" % (i)
             cfg.add_section(secName)
             cfg.set(secName, "pluginName", appPluginName)
             j = 0
             for co in app.installOptList:
-                cfg.set(secName, "installOpt%d"%(j), co)
+                cfg.set(secName, "installOpt%d" % (j), co)
                 j = j + 1
             j = 0
             for co in app.cfgOptList:
-                cfg.set(secName, "appCfgOpt%d"%(j), co)
+                cfg.set(secName, "appCfgOpt%d" % (j), co)
                 j = j + 1
             i = i + 1
 

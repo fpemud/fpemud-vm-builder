@@ -14,11 +14,10 @@ def parseArgs():
     parser.add_argument("--description", default="", help="Virtual machine description")
     parser.add_argument("--os", help="Virtual machine operating system")
     parser.add_argument("--type", help="Virtual machine type")
-    parser.add_argument("path", default="", help="Virtual machine path")
+    parser.add_argument("path", nargs="?", help="Virtual machine path")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     ret = MainImpl(FvmParam(), parseArgs()).main()
     sys.exit(ret)
-

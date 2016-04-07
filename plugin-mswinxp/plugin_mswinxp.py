@@ -6,21 +6,21 @@ from fvm_util import FvmUtil
 from fvm_util import WinDiskMountPoint
 from fvm_util import WinRegistry
 from fvm_util import CfgOptUtil
-from fvm_param import FvmConfigHardware
-from fvm_plugin import FvmPluginOs
+from fvm_vm_fqemu import FvmVmFqemuConfigHardware
+from fvm_plugin import FvmPlugin
 from fvm_plugin import FvmWorkFullControl
 from fvm_plugin import FvmWorkOnLineExec
-from fvm_plugin import FvmWorkOnLineFree
 
-class PluginObject(FvmPluginOs):
+
+class PluginObject(FvmPlugin):
 
     def __init__(self, dataDir):
         self.dataDir = dataDir
 
     def getOsNames(self):
         return [
-             "Microsoft.Windows.XP.Professional.SP3.X86.zh_CN",
-             "Microsoft.Windows.XP.Professional.SP1.X86_64.zh_CN",
+            "Microsoft.Windows.XP.Professional.SP3.X86.zh_CN",
+            "Microsoft.Windows.XP.Professional.SP1.X86_64.zh_CN",
         ]
 
     def getVmCfgHw(self, param, optList):
@@ -35,7 +35,7 @@ class PluginObject(FvmPluginOs):
 
         osName = optList[0][3:]
 
-        vmCfgHw = FvmConfigHardware()
+        vmCfgHw = FvmVmFqemuConfigHardware()
         vmCfgHw.qemuVmType = "pc"
         vmCfgHw.cpuArch = FvmUtil.getWinArch(osName)
         vmCfgHw.cpuNumber = 1
@@ -63,7 +63,7 @@ class PluginObject(FvmPluginOs):
         vmCfgHw.balloonDevicePciSlot = 0x07
 
         vmCfgHw.vdiPortDeviceSupport = True            # fixme
-        vmCfgHw.vdiPortDevicePciSlot = 0x08            
+        vmCfgHw.vdiPortDevicePciSlot = 0x08
 
         vmCfgHw.shareDirectoryNumber = 0
         vmCfgHw.shareDirectoryHotplugSupport = False
@@ -81,7 +81,7 @@ class PluginObject(FvmPluginOs):
             if opt.startswith("os="):
                 osName = opt[3:]
             else:
-                raise Exception("invalid option: %s"%(opt))
+                raise Exception("invalid option: %s" % (opt))
 
         # check vmCfg
         self._checkVmCfg(vmInfo, osName)
@@ -139,7 +139,7 @@ class PluginObject(FvmPluginOs):
             assert False
         work.setExecFileInfo(os.path.join(self.dataDir, "autocfg-init-ie8.au3"))
         work.setReqList(["noNetwork", "rebootAndShutdown"])                    # noNetwork can quicken the installation
-                                                    # IE8 setup program needs rebooting
+        # IE8 setup program needs rebooting
         workList.append(work)
 
         return workList
@@ -199,7 +199,7 @@ class PluginObject(FvmPluginOs):
                 work = self._doJobAddDesktopShortcut(t[1])
                 workList.append(work)
             else:
-                raise Exception("invalid option: %s"%(opt))
+                raise Exception("invalid option: %s" % (opt))
 
         return workList
 
@@ -232,7 +232,7 @@ class PluginObject(FvmPluginOs):
             elif opt == "performance-test":
                 assert False
             else:
-                raise Exception("invalid option: %s"%(opt))
+                raise Exception("invalid option: %s" % (opt))
 
         return workList
 
@@ -258,11 +258,11 @@ class PluginObject(FvmPluginOs):
 
     def _doJobSetScreenResolution(self, opt, value):
         resList = ["800x600", "832x624", "960x640", "1024x600", "1024x768", "1152x864", "1152x870", "1280x720", "1280x760",
-                   "1280x768", "1280x800", "1280x960", "1280x1024", "1360x768", "1366x768", "1400x1050", "1440x900", "1600x900", 
+                   "1280x768", "1280x800", "1280x960", "1280x1024", "1360x768", "1366x768", "1400x1050", "1440x900", "1600x900",
                    "1600x1200", "1680x1050", "1920x1080", "1920x1200", "1920x1440", "2048x1536", "2560x1440", "2560x1600",
                    "2560x2048", "2800x2100", "3200x2400"]
         if value not in resList:
-            raise Exception("invalid option \"%s\", the specified screen-resolution value is invalid"%(opt))
+            raise Exception("invalid option \"%s\", the specified screen-resolution value is invalid" % (opt))
 
         work = FvmWorkOnLineExec()
         work.setWorkName("Configure screen resolution")
@@ -272,7 +272,7 @@ class PluginObject(FvmPluginOs):
     def _doJobSetExplorerView(self, opt, value):
         viewList = ["default", "thumbnail", "title", "icon", "list", "detail"]
         if value not in viewList:
-            raise Exception("invalid option \"%s\", the speicified view is invalid"%(opt))
+            raise Exception("invalid option \"%s\", the speicified view is invalid" % (opt))
 
         work = FvmWorkOnLineExec()
         work.setWorkName("Configure explorer view")
@@ -285,7 +285,7 @@ class PluginObject(FvmPluginOs):
 
         o = FvmUtil.notInList(valueList, optList)
         if o is not None:
-            raise Exception("invalid option \"%s\""%(o))
+            raise Exception("invalid option \"%s\"" % (o))
 
         work = FvmWorkOnLineExec()
         work.setWorkName("Configure explorer option")
@@ -299,7 +299,7 @@ class PluginObject(FvmPluginOs):
 
         o = FvmUtil.notInList(valueList, optList)
         if o is not None:
-            raise Exception("invalid option \"%s\""%(o))
+            raise Exception("invalid option \"%s\"" % (o))
 
         work = FvmWorkOnLineExec()
         work.setWorkName("Configure explorer search option")
@@ -314,7 +314,7 @@ class PluginObject(FvmPluginOs):
 
     def _doJobSetDesktopPerformance(self, value):
         if value != "effect" and value != "speed":
-            raise Exception("invalid option value \"%s\", must be \"effect|speed\""%(value))
+            raise Exception("invalid option value \"%s\", must be \"effect|speed\"" % (value))
 
         work = FvmWorkOnLineExec()
         work.setWorkName("Configure desktop performance")
@@ -327,7 +327,7 @@ class PluginObject(FvmPluginOs):
 
         o = FvmUtil.notInList(valueList, optList)
         if o is not None:
-            raise Exception("invalid option \"%s\""%(o))
+            raise Exception("invalid option \"%s\"" % (o))
 
         work = FvmWorkOnLineExec()
         work.setWorkName("Configure desktop option")
@@ -341,7 +341,7 @@ class PluginObject(FvmPluginOs):
 
         o = FvmUtil.notInList(valueList, optList)
         if o is not None:
-            raise Exception("invalid option \"%s\""%(o))
+            raise Exception("invalid option \"%s\"" % (o))
 
         work = FvmWorkOnLineExec()
         work.setWorkName("Configure start menu option")
@@ -360,7 +360,7 @@ class PluginObject(FvmPluginOs):
 
         o = FvmUtil.notInList(valueList, optList)
         if o is not None:
-            raise Exception("invalid option \"%s\""%(o))
+            raise Exception("invalid option \"%s\"" % (o))
 
         work = FvmWorkOnLineExec()
         work.setWorkName("Configure Windows Media Player")
@@ -369,7 +369,7 @@ class PluginObject(FvmPluginOs):
 
     def _doJobSetControlPanelStyle(self, value):
         if value != "category" and value != "classic":
-            raise Exception("invalid option value \"%s\", must be \"category|classic\""%(value))
+            raise Exception("invalid option value \"%s\", must be \"category|classic\"" % (value))
 
         work = FvmWorkOnLineExec()
         work.setWorkName("Configure explorer search option")
@@ -378,7 +378,7 @@ class PluginObject(FvmPluginOs):
 
     def _doJobSetErrorReport(self, value):
         if value != "enable" and value != "disable":
-                        raise Exception("invalid option value \"%s\", must be \"enable|disable\""%(value))
+            raise Exception("invalid option value \"%s\", must be \"enable|disable\"" % (value))
 
         work = FvmWorkOnLineExec()
         work.setWorkName("Configure explorer search option")
@@ -391,7 +391,7 @@ class PluginObject(FvmPluginOs):
 
         o = FvmUtil.notInList(valueList, optList)
         if o is not None:
-            raise Exception("invalid option \"%s\""%(o))
+            raise Exception("invalid option \"%s\"" % (o))
 
         work = FvmWorkOnLineExec()
         work.setWorkName("Configure Task Manager")
@@ -429,7 +429,7 @@ class PluginObject(FvmPluginOs):
             elif vi == "directx":
                 assert False
             else:
-                raise Exception("invalid patch \"%s\""%(o))
+                raise Exception("invalid patch \"%s\"" % (vi))
             workList.append(work)
 
         return workList
@@ -474,10 +474,11 @@ class PluginObject(FvmPluginOs):
         work.setReqList(["network"])
         return work
 
+
 class OsSetupWork(FvmWorkFullControl):
 
     def __init__(self, dataDir, osName):
-        self.workName = "Setup %s"%(osName)
+        self.workName = "Setup %s" % (osName)
         self.dataDir = dataDir
         self.osName = osName
 
@@ -501,7 +502,7 @@ class OsSetupWork(FvmWorkFullControl):
         self.vmObj.run()
 
     def _createAssistantFloppy(self):
-    
+
         # create floppy file
         floppyFile = os.path.join(self.param.tmpDir, "floppy.img")
         FvmUtil.createFormattedFloppy(floppyFile)
@@ -548,7 +549,7 @@ class OsSetupWork(FvmWorkFullControl):
         buf = FvmUtil.readFile(serialFile)
         return buf.split("\n")[0]
 
-    def _getFile(self, osName, ftype): 
+    def _getFile(self, osName, ftype):
         if osName == "Microsoft.Windows.XP.Professional.SP3.X86.zh_CN":
             if ftype == "iso":
                 return os.path.join(self.dataDir, "winxp_sp3.iso")
@@ -560,7 +561,9 @@ class OsSetupWork(FvmWorkFullControl):
                 assert False
         assert False
 
+
 class BasicPrepareWork(FvmWorkFullControl):
+
     def __init__(self, dataDir, osName):
         self.workName = "Basic preparation"
         self.dataDir = dataDir
@@ -583,15 +586,15 @@ class BasicPrepareWork(FvmWorkFullControl):
 
             # Dismiss screen check, so it won't disturb us
             winreg.addOrModify("HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\DontShowMeThisDialogAgain",
-                "ScreenCheck", "REG_SZ", "no")
+                               "ScreenCheck", "REG_SZ", "no")
 
             # Dismiss balloon tips, so it won't disturb us
             winreg.addOrModify("HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
-                "EnableBalloonTips", "REG_DWORD", 0)
+                               "EnableBalloonTips", "REG_DWORD", 0)
 
             # Disable "AutoPlay & AutoRun", they will disturb some config's autoit script
             winreg.addOrModify("HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\policies\\Explorer",
-                           "NoDriveTypeAutoRun", "REG_DWORD", 0xff)
+                               "NoDriveTypeAutoRun", "REG_DWORD", 0xff)
         finally:
             mptObj.umount()
 
@@ -642,6 +645,7 @@ class BasicPrepareWork(FvmWorkFullControl):
         # this boot will also dimiss the start menu show, so it won't disturb us in future
         self.vmObj.run()
 
+
 class DriverInstallWork(FvmWorkFullControl):
 
     def __init__(self, dataDir, osName):
@@ -668,22 +672,22 @@ class DriverInstallWork(FvmWorkFullControl):
 
             # Configure driver installation options
             winreg.addOrModify("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion",
-                "DevicePath", "REG_EXPAND_SZ", "%SystemRoot%\\inf;C:\\Drivers")
+                               "DevicePath", "REG_EXPAND_SZ", "%SystemRoot%\\inf;C:\\Drivers")
             winreg.addOrModify("HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DriverSearching",
-                "DontPromptForWindowsUpdate", "REG_DWORD", 1)
+                               "DontPromptForWindowsUpdate", "REG_DWORD", 1)
             winreg.addOrModify("HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DriverSearching",
-                "DontSearchWindowsUpdate", "REG_DWORD", 1)
+                               "DontSearchWindowsUpdate", "REG_DWORD", 1)
             winreg.addOrModify("HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DriverSearching",
-                "DontSearchFloppies", "REG_DWORD", 1)
+                               "DontSearchFloppies", "REG_DWORD", 1)
             winreg.addOrModify("HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DriverSearching",
-                "DontSearchCD", "REG_DWORD", 1)
+                               "DontSearchCD", "REG_DWORD", 1)
         finally:
             mptObj.umount()
 
     def _addParaDriver(self, mptObj, dstDir):
         drvDir = os.path.join(self.param.tmpDir, "virtio")
-        FvmUtil.shell('/bin/mkdir "%s"'%(drvDir), "stdout")
-        FvmUtil.shell('/usr/bin/7z x "%s" -o"%s"'%(os.path.join(self.dataDir, "virtio-win-0.1-52.iso"), drvDir), "stdout")
+        FvmUtil.shell('/bin/mkdir "%s"' % (drvDir), "stdout")
+        FvmUtil.shell('/usr/bin/7z x "%s" -o"%s"' % (os.path.join(self.dataDir, "virtio-win-0.1-52.iso"), drvDir), "stdout")
 
         if FvmUtil.getWinArch(self.osName) == "x86":
             drvSubDir = os.path.join(drvDir, "XP", "X86")
@@ -701,8 +705,8 @@ class DriverInstallWork(FvmWorkFullControl):
 
     def _addQxlDriver(self, mptObj, dstDir):
         drvDir = os.path.join(self.param.tmpDir, "qxl")
-        FvmUtil.shell('/bin/mkdir "%s"'%(drvDir), "stdout")
-        FvmUtil.shell('/usr/bin/unzip "%s" -d "%s"'%(os.path.join(self.dataDir, "qxl_xp_x86.zip"), drvDir), "stdout")
+        FvmUtil.shell('/bin/mkdir "%s"' % (drvDir), "stdout")
+        FvmUtil.shell('/usr/bin/unzip "%s" -d "%s"' % (os.path.join(self.dataDir, "qxl_xp_x86.zip"), drvDir), "stdout")
 
         drvSubDir = os.path.join(drvDir, "xp", "x86")
         for f in os.listdir(drvSubDir):
@@ -710,8 +714,8 @@ class DriverInstallWork(FvmWorkFullControl):
 
     def _addVdagent(self, mptObj, dstDir):
         drvDir = os.path.join(self.param.tmpDir, "vdagent")
-        FvmUtil.shell('/bin/mkdir "%s"'%(drvDir), "stdout")
-        FvmUtil.shell('/usr/bin/unzip "%s" -d "%s"'%(os.path.join(self.dataDir, "vdagent-win32_20111124.zip"), drvDir), "stdout")
+        FvmUtil.shell('/bin/mkdir "%s"' % (drvDir), "stdout")
+        FvmUtil.shell('/usr/bin/unzip "%s" -d "%s"' % (os.path.join(self.dataDir, "vdagent-win32_20111124.zip"), drvDir), "stdout")
 
         if FvmUtil.getWinArch(self.osName) == "x86":
             drvSubDir = os.path.join(drvDir, "vdagent_x86")
@@ -722,6 +726,7 @@ class DriverInstallWork(FvmWorkFullControl):
 
         for f in os.listdir(drvSubDir):
             mptObj.addFile(os.path.join(drvSubDir, f), dstDir, True)
+
 
 class DriverUpdateWork(FvmWorkFullControl):
 
@@ -792,6 +797,7 @@ class DriverUpdateWork(FvmWorkFullControl):
             self.vmObj.run()
             self.vmObj.setNetworkStatus("")
 
+
 class MyStartupFile:
 
     def __init__(self, param, osName, scriptFileList=[]):
@@ -812,8 +818,8 @@ class MyStartupFile:
 
         buf += 'cd /d "D:\\"\n'
         for vsi in scriptFileList:
-            buf += 'echo Executing script "%s"...\n'%(vsi)
-            buf += '"autoit\\autoit3.exe" "%s"\n'%(vsi)
+            buf += 'echo Executing script "%s"...\n' % (vsi)
+            buf += '"autoit\\autoit3.exe" "%s"\n' % (vsi)
             buf += 'sleep 1\n'
             buf += '\n'
 
